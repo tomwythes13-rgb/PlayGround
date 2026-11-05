@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#100b08" />
+  <meta name="description" content="Tom Taylor Car Chase — steal a ride, outrun the cops, and reach the house in the desert. A 2D open-world chase game." />
+  <title>Tom Taylor Car Chase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23120d09'/%3E%3Cpath d='M10 41h44l-5-12H18z' fill='%23ff8a2a'/%3E%3Ccircle cx='21' cy='44' r='5' fill='%23f4e9d4'/%3E%3Ccircle cx='45' cy='44' r='5' fill='%23f4e9d4'/%3E%3C/svg%3E" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main id="app">
+    <canvas id="game" aria-label="Tom Taylor Car Chase game"></canvas>
+
+    <div class="grain" aria-hidden="true"></div>
+    <div id="damage-vignette" class="vignette" aria-hidden="true"></div>
+    <div id="heat-vignette" class="vignette heat" aria-hidden="true"></div>
+
+    <!-- ================= HUD ================= -->
+    <section id="hud" class="hud" hidden aria-live="polite">
+      <div class="mission-panel">
+        <div class="mission-kicker"><span class="dot"></span> MISSION 01 &middot; DESERT RUN</div>
+        <h2 id="objective">Steal a car. Any car.</h2>
+        <div id="stars" class="stars" aria-label="Wanted level"></div>
+        <div id="sub-objective" class="sub-objective">Find a ride on the street</div>
+      </div>
+
+      <div class="map-cluster">
+        <div class="minimap-frame">
+          <canvas id="minimap" width="176" height="176"></canvas>
+          <div class="minimap-ring" aria-hidden="true"></div>
+        </div>
+        <div class="minimap-meta">
+          <span id="distance">4.8 KM TO HOUSE</span>
+          <span class="map-compass">N</span>
+        </div>
+      </div>
+
+      <button id="sound" class="sound-btn" type="button" aria-label="Toggle sound" title="Toggle sound">
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2-3.74v7.48A4.5 4.5 0 0 0 16.5 12zm-2-8.9v2.06a7 7 0 0 1 0 13.68v2.06a9 9 0 0 0 0-17.8z" fill="currentColor"/></svg>
+      </button>
+
+      <div id="vehicle-panel" class="vehicle-panel">
+        <div class="speedo">
+          <b id="speed">0</b>
+          <span>KM/H</span>
+        </div>
+        <div class="meter-row">
+          <label>RIDE</label>
+          <div class="meter"><i id="car-health"></i></div>
+        </div>
+        <div class="meter-row player-meter">
+          <label>YOU</label>
+          <div class="meter"><i id="player-health"></i></div>
+        </div>
+      </div>
+
+      <div id="bust-meter" class="bust-meter" hidden>
+        <span>BUSTED</span>
+        <div><i></i></div>
+      </div>
+
+      <div id="prompt" class="prompt" hidden>
+        <kbd id="prompt-key">E</kbd>
+        <span id="prompt-text">Steal this car</span>
+      </div>
+    </section>
+
+    <!-- ================= TOAST ================= -->
+    <div id="toast" class="toast" role="status" aria-live="assertive">
+      <div class="toast-title" id="toast-title"></div>
+      <div class="toast-sub" id="toast-sub"></div>
+    </div>
+
+    <!-- ================= TOUCH CONTROLS ================= -->
+    <section id="touch" class="touch" hidden aria-label="Touch controls">
+      <div id="joystick" class="joystick" aria-label="Move or steer">
+        <div class="joystick-arrows" aria-hidden="true">
+          <i class="up"></i><i class="right"></i><i class="down"></i><i class="left"></i>
+        </div>
+        <div id="stick" class="stick"></div>
+      </div>
+      <div class="touch-right">
+        <button id="btn-action" class="tbtn action" type="button">STEAL</button>
+        <button id="btn-drift" class="tbtn drift" type="button">DRIFT</button>
+        <button id="btn-brake" class="tbtn brake" type="button">BRAKE</button>
+        <button id="btn-gas" class="tbtn gas" type="button">GAS</button>
+      </div>
+    </section>
+
+    <!-- ================= TITLE ================= -->
+    <section id="screen-title" class="screen title-screen">
+      <div class="title-inner">
+        <div class="title-kicker">A 2D DESERT GETAWAY</div>
+        <h1>
+          <span class="tom">TOM TAYLOR</span>
+          <span class="chase">CAR CHASE</span>
+        </h1>
+        <p class="title-copy">
+          Steal a ride, shake the heat, and make it to the house
+          out past the edge of the city. The cops will not stop coming.
+        </p>
+        <button id="start" class="start-btn" type="button">
+          <span>START THE CHASE</span>
+          <small>Click or press ENTER</small>
+        </button>
+        <div class="controls-card">
+          <div>
+            <span class="controls-label">KEYBOARD</span>
+            <p><kbd>WASD</kbd> drive / run &nbsp; <kbd>E</kbd> enter / exit &nbsp; <kbd>SPACE</kbd> drift</p>
+          </div>
+          <div>
+            <span class="controls-label">TOUCH</span>
+            <p>Left stick to steer &middot; GAS, BRAKE, DRIFT &middot; STEAL / EXIT button</p>
+          </div>
+        </div>
+        <div class="title-foot">BEST PLAYED WITH SOUND &middot; LANDSCAPE RECOMMENDED ON PHONES</div>
+      </div>
+      <div class="title-badge" aria-hidden="true">
+        <span>STOLEN VEHICLE</span>
+        <b>WANTED</b>
+      </div>
+    </section>
+
+    <!-- ================= END ================= -->
+    <section id="screen-end" class="screen end-screen" hidden>
+      <div class="end-inner">
+        <div id="end-kicker" class="end-kicker">MISSION COMPLETE</div>
+        <h2 id="end-title">HOME FREE</h2>
+        <p id="end-copy" class="end-copy"></p>
+        <div class="stats">
+          <div><span>TIME</span><b id="stat-time">0:00</b></div>
+          <div><span>TOP SPEED</span><b id="stat-speed">0</b><small>KM/H</small></div>
+          <div><span>COPS WRECKED</span><b id="stat-cops">0</b></div>
+          <div><span>MAX HEAT</span><b id="stat-stars">0</b><small>/5</small></div>
+        </div>
+        <button id="restart" class="start-btn" type="button">
+          <span>RUN IT AGAIN</span>
+          <small>Press R</small>
+        </button>
+        <div class="end-foot">TOM TAYLOR CAR CHASE &middot; A PLAYGROUND ORIGINAL</div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
